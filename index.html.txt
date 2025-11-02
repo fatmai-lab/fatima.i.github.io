@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+
+  <!-- Give the page a title -->
+  <title>Ramallah Waste Containers</title>
+
+  <!-- Add a link to the Leaflet CSS library so you can reference it for styling your map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+
+  <!-- All the CSS code goes inside the style tags below -->
+  <style>
+    /* style the body */
+    body {
+      margin: 0px;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* style the map */
+    #map {
+      position: absolute;
+      width: 100%;
+      top: 0px;
+      bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- the map -->
+  <div id="map"></div>
+
+  <!-- Add a link to the Leaflet JavaScript library so you can reference it for building your map -->
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+
+  <!-- Add a link to the jQuery JavaScript library so you can leverage ajax methods to load your data -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  <!-- All JavaScript goes inside the script tags below -->
+  <script>
+    // define map options
+    const mapOptions = {
+      zoomSnap: 0.5,  // this allows fractional zooming
+      center: [31.9045, 35.2045], // center the map on the coordinates for Ramallah
+      zoom: 17.5, // set the initial zoom
+    };
+
+    // define the map with the options above
+    const map = L.map("map", mapOptions);
+
+    
+const locateBtn = L.control({ position: 'topleft' });
+
+locateBtn.onAdd = function (map) {
+  const btn = L.DomUtil.create('button', 'locate-button');
+  btn.innerHTML = '📍 Locate Me';
+  btn.style.backgroundColor = '#fff';
+  btn.style.padding = '6px 10px';
+  btn.style.border = '2px solid #555';
+  btn.style.borderRadius = '8px';
+  btn.style.cursor = 'pointer';
+  btn.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+  btn.title = 'Find your current location';
+
+  btn.onclick = function () {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          // إنشاء دائرة في موقع المستخدم
+          const userMarker = L.circleMarker([lat, lon], {
+            radius: 8,
+            fillColor: 'blue',
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.9
+          }).addTo(map);
+
+          // عمل zoom تلقائي على الموقع
+          map.setView([lat, lon], 17);
+
+          // عرض Popup صغير
+          userMarker.bindPopup("📍 You are here!").openPopup();
+        },
+        function () {
+          alert("⚠️ لم يتم السماح بالوصول إلى الموقع.");
+        }
+      );
+    } else {
+      alert("❌ المتصفح لا يدعم تحديد الموقع الجغرافي.");
+    }
+  };
+
+  return btn;
+};
+
+// إضافة الزر إلى الخريطة
+locateBtn.addTo(map);
+    
+// add a base map to the map
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 20
+      }).addTo(map);
+
+
+// use jquery to load GeoJSON data
+
+    
+    $.getJSON("wasteContainer.json", function(WC) {
+      L.geoJson(WC, {
+        pointToLayer: function(feature, latlng) {
+          return L.circleMarker(latlng, {
+            radius: 5,
+            fillColor: "orange",
+            color: "orange",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+          });
+        }
+      }).addTo(map);
+    });
+   $.getJSON("RamallahZones.json", function(RZ) {
+      L.geoJson(RZ, {
+        style: function(feature) {
+          return {
+            fillColor: "yellow",
+            fillOpacity: 0.3,
+            color: "yellow",
+            weight: 1.0,
+            opacity: 0.7
+          };
+        },
+        onEachFeature: function(feature, layer) {
+          layer.on('click', function(e) {
+            alert("Zone: " + feature.properties.NAME_ENGLI + "\nMAIL_CODE: " + feature.properties.MAIL_CODE);
+          });
+        }
+      }).addTo(map);
+    });
+
+    // Add layers to map with control options
+    const baseLayers = {};
+    const overlays = {
+      "Zones": zonesLayer,
+      "Waste Containers": wasteContainersLayer
+    };
+
+    // Add layer control to the map
+    L.control.layers(baseLayers, overlays).addTo(map);
+
+    // Add both layers to the map by default
+    zonesLayer.addTo(map);
+    wasteContainersLayer.addTo(map);
+  </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
